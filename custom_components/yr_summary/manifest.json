@@ -1,0 +1,9 @@
+{
+  "domain": "yr_summary",
+  "name": "Yr Summary",
+  "version": "0.1.0",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "iot_class": "cloud_poll"
+}

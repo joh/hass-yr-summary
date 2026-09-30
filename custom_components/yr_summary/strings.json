@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Yr summary",
+        "description": "Show the official Yr daily text summary for a location.",
+        "data": {
+          "location": "Location (name, e.g. Trondheim, or location id, e.g. 1-211102)",
+          "language": "Language"
+        }
+      },
+      "select_location": {
+        "title": "Multiple locations found",
+        "data": {
+          "choice": "Location"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect to the Yr API. Check your internet connection.",
+      "no_results": "No location found. Try a more specific name or a location id."
+    },
+    "abort": {
+      "already_configured": "This location and language combination is already configured."
+    }
+  }
+}
