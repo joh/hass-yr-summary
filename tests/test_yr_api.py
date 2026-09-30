@@ -54,11 +54,50 @@ def test_parse_location():
         {"id": "1-211102", "name": "Trondheim",
          "urlPath": "Norge/Tr\u00f8ndelag/Trondheim/Trondheim"}
     )
-    assert location == Location("1-211102", "Trondheim", "Norge")
+    assert location == Location(
+        location_id="1-211102", name="Trondheim", country="Norge"
+    )
+
+
+def test_parse_suggest_extracts_description_fields():
+    data = {
+        "_embedded": {
+            "location": [
+                {
+                    "category": {"id": "CK51", "name": "Boligfelt"},
+                    "id": "1-2826705",
+                    "name": "Dalg\u00e5rd",
+                    "elevation": 148,
+                    "urlPath": "Norge/Tr\u00f8ndelag/Trondheim/Dalg\u00e5rd",
+                    "country": {"id": "NO", "name": "Norge"},
+                    "region": {"id": "NO/50", "name": "Tr\u00f8ndelag"},
+                    "subregion": {"id": "NO/50/5001", "name": "Trondheim"},
+                }
+            ]
+        }
+    }
+    (location,) = yr_api.parse_suggest(data)
+    assert location.category == "Boligfelt"
+    assert location.region == "Tr\u00f8ndelag"
+    assert location.subregion == "Trondheim"
+    assert location.elevation == 148
+    assert location.description == "Boligfelt, Trondheim (Tr\u00f8ndelag), 148 m"
+
+
+def test_location_description_without_optional_fields():
+    assert Location("1-211102", "Trondheim").description is None
+    assert (
+        Location("1-211102", "Trondheim", region="Tr\u00f8ndelag",
+                 elevation=10).description
+        == "Tr\u00f8ndelag, 10 m"
+    )
 
 
 def test_location_display_name_omits_redundant_country():
-    assert Location("1-211102", "Trondheim", "Trondheim").display_name == "Trondheim"
+    assert (
+        Location("1-211102", "Trondheim", country="Trondheim").display_name
+        == "Trondheim"
+    )
 
 
 def test_parse_autotext_ok():

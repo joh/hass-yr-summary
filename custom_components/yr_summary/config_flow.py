@@ -125,7 +125,14 @@ class YrSummaryConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required("choice"): vol.In(
-                        {c.location_id: c.display_name for c in self._candidates}
+                        {
+                            c.location_id: (
+                                f"{c.display_name} \u2014 {c.description}"
+                                if c.description
+                                else c.display_name
+                            )
+                            for c in self._candidates
+                        }
                     )
                 }
             ),

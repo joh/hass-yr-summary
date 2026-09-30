@@ -15,6 +15,10 @@ class Location:
 
     location_id: str
     name: str
+    category: str | None = None      # e.g. 'Boligfelt', 'By'
+    region: str | None = None        # county, e.g. 'Trøndelag'
+    subregion: str | None = None     # municipality, e.g. 'Trondheim'
+    elevation: int | None = None     # metres above sea level
     country: str | None = None
 
     @property
@@ -22,6 +26,22 @@ class Location:
         if self.country and self.country not in self.name:
             return f"{self.name}, {self.country}"
         return self.name
+
+    @property
+    def description(self) -> str | None:
+        """Disambiguation info, like Yr's search page shows,
+        e.g. 'Boligfelt, Trondheim (Trøndelag), 148 m'."""
+        parts: list[str] = []
+        if self.category:
+            parts.append(self.category)
+        place = self.subregion or ""
+        if self.region and self.region != self.subregion:
+            place = f"{place} ({self.region})" if place else self.region
+        if place:
+            parts.append(place)
+        if self.elevation is not None:
+            parts.append(f"{self.elevation} m")
+        return ", ".join(parts) or None
 
 
 class YrApiError(Exception):
@@ -51,17 +71,24 @@ def _country_from_url_path(url_path: str | None) -> str | None:
     return first or None
 
 
+def _parse_location_item(item: dict[str, Any]) -> Location:
+    """Parse one location object from the Yr API."""
+    return Location(
+        location_id=str(item["id"]),
+        name=str(item["name"]),
+        category=(item.get("category") or {}).get("name"),
+        region=(item.get("region") or {}).get("name"),
+        subregion=(item.get("subregion") or {}).get("name"),
+        elevation=item.get("elevation"),
+        country=(item.get("country") or {}).get("name")
+        or _country_from_url_path(item.get("urlPath")),
+    )
+
+
 def parse_suggest(data: dict[str, Any]) -> list[Location]:
     """Parse a /locations/suggest response into Location objects."""
     results = data.get("_embedded", {}).get("location", [])
-    return [
-        Location(
-            location_id=str(item["id"]),
-            name=str(item["name"]),
-            country=_country_from_url_path(item.get("urlPath")),
-        )
-        for item in results
-    ]
+    return [_parse_location_item(item) for item in results]
 
 
 async def async_suggest_locations(session: ClientSession, query: str) -> list[Location]:
@@ -72,11 +99,7 @@ async def async_suggest_locations(session: ClientSession, query: str) -> list[Lo
 
 def parse_location(data: dict[str, Any]) -> Location:
     """Parse a /locations/{id} response into a Location."""
-    return Location(
-        location_id=str(data["id"]),
-        name=str(data["name"]),
-        country=_country_from_url_path(data.get("urlPath")),
-    )
+    return _parse_location_item(data)
 
 
 async def async_get_location(session: ClientSession, location_id: str) -> Location:
